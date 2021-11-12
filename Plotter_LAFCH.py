@@ -4,6 +4,7 @@ import sympy
 import tkinter
 import math
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import sys
 
 root = tkinter.Tk()
 root.wm_title("MY_LAFCHA")
@@ -11,7 +12,10 @@ root.wm_title("MY_LAFCHA")
 W_min = float('inf')
 W_max = float('-inf')
 
-root.wm_attributes('-fullscreen','true')
+figsize = (10, 8)
+if sys.platform == 'macos':
+    figsize = (10, 7)
+    root.wm_attributes('-fullscreen','true')
 
 
 def bild_lax(nom, den): # nom and den are strings
@@ -306,7 +310,7 @@ def clear():
 def save():
     plt.savefig('MY_LAFCH', dpi=300)
 
-fig, (ax, ax_f) = plt.subplots(nrows=2, ncols=1, figsize=(10, 7))
+fig, (ax, ax_f) = plt.subplots(nrows=2, ncols=1, figsize=figsize)
 fig.subplots_adjust(bottom=0.04, top=0.99)
 ax.set_xscale('log')
 ax.set_xlabel('Omega [rad / s]')
