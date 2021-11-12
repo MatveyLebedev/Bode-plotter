@@ -12,6 +12,9 @@ root.wm_title("MY_LAFCHA")
 W_min = float('inf')
 W_max = float('-inf')
 
+LEGENDS_lax = []
+LEGENDS_fase = []
+
 figsize = (10, 8)
 if sys.platform == 'macos':
     figsize = (10, 7)
@@ -264,8 +267,14 @@ def plot():
     den = inp_den.get()
     X, Y = bild_lax(nom, den)
     ax.set_xscale('log')
-    ax.plot(X, Y, color='b')
-
+    if inp_legend.get() != 'auto':
+        name = inp_legend.get().split(', ')[0]
+        col = inp_legend.get().split(', ')[1]
+        LEGENDS_lax.append(name)
+        ax.plot(X, Y, color=col)
+    else:
+        ax.plot(X, Y, color='b')
+    ax.legend(LEGENDS_lax)
     canvas.draw_idle()
 
 def plot_real():
@@ -274,7 +283,14 @@ def plot_real():
     bild_lax(nom, den)
     X, Y, Y_f = find_lafch_not_asimpt(nom, den)
     ax.set_xscale('log')
-    ax.plot(X, Y, color='r')
+    if inp_legend.get() != 'auto':
+        name = inp_legend.get().split(', ')[0]
+        col = inp_legend.get().split(', ')[1]
+        LEGENDS_lax.append(name)
+        ax.plot(X, Y, color=col)
+    else:
+        ax.plot(X, Y, color='r')
+    ax.legend(LEGENDS_lax)
     canvas.draw_idle()
 
 def plot_fase():
@@ -283,28 +299,52 @@ def plot_fase():
     bild_lax(nom, den)
     X, Y, Y_f = find_lafch_not_asimpt(nom, den)
     ax_f.set_xscale('log')
-    ax_f.plot(X, Y_f, color='r')
+    if inp_legend.get() != 'auto':
+        name = inp_legend.get().split(', ')[0]
+        col = inp_legend.get().split(', ')[1]
+        LEGENDS_fase.append(name)
+        ax_f.plot(X, Y_f, color=col)
+    else:
+        ax_f.plot(X, Y_f, color='r')
+    ax_f.legend(LEGENDS_fase)
     canvas.draw_idle()
 
 def plot_point_lax():
     points_X = list(map(float, inp_X.get().split(', ')))
     points_Y = list(map(float, inp_Y_lax.get().split(', ')))
     ax.set_xscale('log')
-    ax.plot(points_X, points_Y, color='g')
+    if inp_legend.get() != 'auto':
+        name = inp_legend.get().split(', ')[0]
+        col = inp_legend.get().split(', ')[1]
+        LEGENDS_lax.append(name)
+        ax.plot(points_X, points_Y, color=col)
+    else:
+        ax.plot(points_X, points_Y, color='g')
+    ax.legend(LEGENDS_lax)
     canvas.draw_idle()
 
 def plot_point_fase():
     points_X = list(map(float, inp_X.get().split(', ')))
     points_Y = list(map(float, inp_Y_fase.get().split(', ')))
     ax_f.set_xscale('log')
-    ax_f.plot(points_X, points_Y, color='g')
+    if inp_legend.get() != 'auto':
+        name = inp_legend.get().split(', ')[0]
+        col = inp_legend.get().split(', ')[1]
+        LEGENDS_fase.append(name)
+        ax_f.plot(points_X, points_Y, color=col)
+    else:
+        ax_f.plot(points_X, points_Y, color='g')
+    ax_f.legend(LEGENDS_fase)
     canvas.draw_idle()
 
 def clear():
+    global LEGENDS_lax, LEGENDS_fase
     ax.clear()
     ax.grid()
     ax_f.clear()
     ax_f.grid()
+    LEGENDS_lax = []
+    LEGENDS_fase = []
     canvas.draw_idle()
 
 def save():
@@ -338,9 +378,8 @@ inp_num.grid(row=1, column=2, pady=1)
 inp_den = tkinter.Entry(master=root, width=60, textvariable=den_text, justify='center')
 inp_den.grid(row=2, column=2, pady=1)
 
-tkinter.Button(master=root, text="Clear", command=clear, width=10).grid(row=1, column=5)
-tkinter.Button(master=root, text="Plot", command=plot, width=10).grid(row=1, column=3, rowspan=2)
-tkinter.Button(master=root, text="Save", command=save, width=10).grid(row=2, column=5)
+tkinter.Button(master=root, text="Clear", command=clear, width=10).grid(row=2, column=3)
+tkinter.Button(master=root, text="Plot", command=plot, width=10).grid(row=1, column=3)
 tkinter.Button(master=root, text="Plot_real", command=plot_real, width=10).grid(row=1, column=4)
 tkinter.Button(master=root, text="Plot_fase", command=plot_fase, width=10).grid(row=2, column=4)
 
@@ -375,5 +414,11 @@ inp_X_max = tkinter.Entry(master=root, width=10, textvariable=X_max_text, justif
 inp_X_max.grid(row=5, column=5)
 
 toolbar.grid(row=6, column=0, columnspan=3)
+
+tkinter.Label(master=root, text="Legend and color \nname, r or auto").grid(row=1, column=5)
+Legend_and_color = tkinter.StringVar()
+Legend_and_color.set('auto')
+inp_legend = tkinter.Entry(master=root, width=10, textvariable=Legend_and_color, justify='center')
+inp_legend.grid(row=2, column=5)
 
 tkinter.mainloop()
