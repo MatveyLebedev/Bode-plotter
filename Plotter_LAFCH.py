@@ -3,7 +3,7 @@ import numpy as np
 import sympy
 import tkinter
 import math
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.backends.backend_tkagg import ( FigureCanvasTkAgg, NavigationToolbar2Tk )
 import sys
 
 root = tkinter.Tk()
@@ -321,7 +321,8 @@ ax_f.grid()
 canvas = FigureCanvasTkAgg(fig, master=root)
 canvas.draw()
 canvas.get_tk_widget().grid(row=0, column=0, columnspan=6)
-
+toolbar = NavigationToolbar2Tk(canvas, root, pack_toolbar=False)
+toolbar.update()
 
 nom_text = tkinter.StringVar()
 nom_text.set('0.0292 1')
@@ -352,13 +353,13 @@ Y_lax_points.set('1, -20, -50, -100')
 Y_fase_points = tkinter.StringVar()
 Y_fase_points.set('0, -65, -90, -180')
 inp_X = tkinter.Entry(master=root, width=60, textvariable=X_points_text, justify='center')
-inp_X.grid(row=3, column=2, rowspan=2, pady=1)
+inp_X.grid(row=3, column=2)
 tkinter.Label(master=root, text=" Y LAX :").grid(row=4, column=1)
 inp_Y_lax = tkinter.Entry(master=root, width=60,  textvariable=Y_lax_points, justify='center')
-inp_Y_lax.grid(row=4, column=2, rowspan=2, pady=20)
+inp_Y_lax.grid(row=4, column=2)
 tkinter.Label(master=root, text=" Y FASE :").grid(row=5, column=1)
 inp_Y_fase = tkinter.Entry(master=root, width=60, textvariable=Y_fase_points, justify='center')
-inp_Y_fase.grid(row=5, column=2, rowspan=2, pady=1)
+inp_Y_fase.grid(row=5, column=2)
 tkinter.Button(master=root, text="Points_lax", command=plot_point_lax, width=10).grid(row=4, column=3)
 tkinter.Button(master=root, text="Points_fase", command=plot_point_fase, width=10).grid(row=5, column=3)
 
@@ -372,5 +373,7 @@ inp_X_min = tkinter.Entry(master=root, width=10, textvariable=X_min_text, justif
 inp_X_min.grid(row=4, column=5)
 inp_X_max = tkinter.Entry(master=root, width=10, textvariable=X_max_text, justify='center')
 inp_X_max.grid(row=5, column=5)
+
+toolbar.grid(row=6, column=0, columnspan=3)
 
 tkinter.mainloop()
