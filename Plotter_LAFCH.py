@@ -16,7 +16,7 @@ LEGENDS_lax = []
 LEGENDS_fase = []
 
 figsize = (10, 8)
-if sys.platform == 'macos':
+if sys.platform == 'darwin':
     figsize = (10, 7)
     root.wm_attributes('-fullscreen','true')
 
@@ -72,15 +72,15 @@ def bild_lax(nom, den): # nom and den are strings
     naklon = 0
     naklons = []
 
-
-    for i in range(len(W_d)):
+# TODO: [::-1]
+    for i in range(len(W_d))[::-1]:
         if W_d[i] == 0:
             W_d.pop(i)
             naklon += -1
             S_den *= s
 
 
-    for i in range(len(W_n)):
+    for i in range(len(W_n))[::-1]:
         if W_n[i] == 0:
             W_n.pop(i)
             naklon += 1
