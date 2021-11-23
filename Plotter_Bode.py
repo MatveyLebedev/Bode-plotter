@@ -136,6 +136,7 @@ def bild_lax(nom, den): # nom and den are strings
 
     naklons.append(naklon)
 
+
     for i in range(len(W_n) + len(W_d)):
         if len(W_n) == 0:
             n_min = float('inf')
@@ -173,21 +174,23 @@ def bild_lax(nom, den): # nom and den are strings
                     Y[-1] = 0
         naklons.append(naklon)
 
+
+
+    for i in range(len(X)):
+        if X[i] >= Wf:
+            X = X[0: i]
+            Y = Y[0: i]
+            naklon = naklons[i - 1]
+            break
+        if X[i] < Ws:
+            X = [X[0]].append(X[i::])
+            Y = [Y[0]].append(Y[i::])
+
     X.append(Wf)
     Y.append(abs(np.log10(float(X[-2])) - np.log10(float(X[-1]))) * 20 * naklon + Y[-1])
 
     if type(Y[-1]) is sympy.core.numbers.NaN:
         Y[-1] = 0
-
-    for i in range(len(X)):
-        X[i] = X[i]
-
-    fhis = []
-
-    # TODO: delete
-    for n, i in zip(naklons, range(len(naklons))):
-        fhis.append(n * 90 + i * 45)
-    fhis.append(fhis[-1] - 45)
 
     naclon_0 = naklons[0]
     return X, Y
@@ -251,13 +254,23 @@ def find_lafch_not_asimpt(den, nom):
     Y_LAX = []
     Y_FASE = []
 
+    flag = True
+    fase_0 = 0
+    fase_dif = 0
     for w in W_to_compute:
         PQ = tf.subs(s, np.complex(0, w)).evalf()
         P, Q = PQ.as_real_imag()
         AMP = (P**2 + Q**2)**(1/2)
         FASE = 180 * naclon_0 + math.degrees(math.atan(Q/P))
         Y_LAX.append(20 * math.log10(AMP))
-        Y_FASE.append(FASE)
+
+        if flag:
+            fase_0 = FASE
+            flag = False
+        if abs(FASE - fase_0) > 100:
+            fase_dif = fase_0 - FASE
+        fase_0 = FASE
+        Y_FASE.append(FASE + fase_dif)
 
     return X, Y_LAX, Y_FASE
 
@@ -364,12 +377,13 @@ canvas.get_tk_widget().grid(row=0, column=0, columnspan=6)
 toolbar = NavigationToolbar2Tk(canvas, root, pack_toolbar=False)
 toolbar.update()
 
-nom_text = tkinter.StringVar()
-nom_text.set('0.0292 1')
+nom_text = tkinter.StringVar()                                                                                 #data
+nom_text.set('8.79e-11 0.0088')
 den_text = tkinter.StringVar()
-den_text.set('0.447 1, 0.0014 1, 1 0')
+den_text.set('4.7e-4 0, 7.67e-14 7.67e-06 0.0032 0.0859 1')
 ku_text = tkinter.StringVar()
-ku_text.set('2409')
+ku_text.set('25')
+
 inp_ku = tkinter.Entry(master=root, width=10, textvariable=ku_text, justify='center')
 inp_ku.grid(row=1, column=1, rowspan=2)
 tkinter.Label(master=root, text="W(S)=").grid(row=1, column=0, rowspan=2)
