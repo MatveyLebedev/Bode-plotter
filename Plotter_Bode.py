@@ -29,6 +29,9 @@ def bild_lax(nom, den): # nom and den are strings
 
     nom = nom.split(', ')
     den = den.split(', ')
+    # add K(os)
+    Kos = inp_Kos.get()
+    Kos = Kos.split(', ')
 
     def find_w(nom):
         nom = nom.split(' ')
@@ -51,10 +54,24 @@ def bild_lax(nom, den): # nom and den are strings
             W_n.append(abs(S_nom[i]))
         return W_n, eq_n
 
+    def find_w_os(eq_n):
+        S_nom = sympy.solve(eq_n)
+        for i in range(len(S_nom)):
+            S_nom[i] = S_nom[i].as_real_imag()[0]
+        W_n = []
+        for i in range(len(S_nom)):
+            W_n.append(abs(S_nom[i]))
+        return W_n
+
     eq_n = sympy.parse_expr('1')
     eq_d = sympy.parse_expr('1')
+    eq_os = sympy.parse_expr('1')
     W_n = []
     W_d = []
+
+    for e in Kos:
+        W, eq = find_w(e)
+        eq_os *= eq
 
     for e in nom:
         W, eq = find_w(e)
@@ -72,6 +89,8 @@ def bild_lax(nom, den): # nom and den are strings
     naklon = 0
     naklons = []
 
+
+
 # TODO: [::-1]
     for i in range(len(W_d))[::-1]:
         if W_d[i] == 0:
@@ -85,6 +104,17 @@ def bild_lax(nom, den): # nom and den are strings
             W_n.pop(i)
             naklon += 1
             S_num *= s
+
+    if Kos != ['0'] and naklon != 0:
+        nak = naklon
+        naklon = 0
+        f = True
+    else:
+        f = False
+
+    if Kos != ['0']:
+        eq_d = eq_d*S_den + float(eval(inp_ku.get()))*eq_n*S_num * eq_os
+        W_d = find_w_os(eq_d)
 
     K = eq_n.subs(s, 0) / eq_d.subs(s, 0) * float(eval(inp_ku.get()))
 
@@ -136,7 +166,6 @@ def bild_lax(nom, den): # nom and den are strings
 
     naklons.append(naklon)
 
-
     for i in range(len(W_n) + len(W_d)):
         if len(W_n) == 0:
             n_min = float('inf')
@@ -172,7 +201,12 @@ def bild_lax(nom, den): # nom and den are strings
                 Y.append(abs(np.log10(float(X[-2])) - np.log10(float(X[-1]))) * 20 * naklon + Y[-1])
                 if type(Y[-1]) is sympy.core.numbers.NaN:
                     Y[-1] = 0
-        naklons.append(naklon)
+        if f:
+            naklon += nak
+            naklons.append(naklon)
+            f = False
+        else:
+            naklons.append(naklon)
 
 
 
@@ -202,6 +236,9 @@ def find_lafch_not_asimpt(den, nom):
 
     nom = nom.split(', ')
     den = den.split(', ')
+    # add K(os)
+    Kos = inp_Kos.get()
+    Kos = Kos.split(', ')
 
     def find_w(nom):
         nom = nom.split(' ')
@@ -224,10 +261,24 @@ def find_lafch_not_asimpt(den, nom):
             W_n.append(abs(S_nom[i]))
         return W_n, eq_n
 
+    def find_w_os(eq_n):
+        S_nom = sympy.solve(eq_n)
+        for i in range(len(S_nom)):
+            S_nom[i] = S_nom[i].as_real_imag()[0]
+        W_n = []
+        for i in range(len(S_nom)):
+            W_n.append(abs(S_nom[i]))
+        return W_n
+
     eq_n = sympy.parse_expr('1')
     eq_d = sympy.parse_expr('1')
+    eq_os = sympy.parse_expr('1')
     W_n = []
     W_d = []
+
+    for e in Kos:
+        W, eq = find_w(e)
+        eq_os *= eq
 
     for e in nom:
         W, eq = find_w(e)
@@ -241,7 +292,9 @@ def find_lafch_not_asimpt(den, nom):
         if eq.subs(s, 0) != 0:
             eq_d *= eq
 
-    tf = (K * eq_d / eq_n) * S_num / S_den
+    eq_n = eq_n*S_den + K*eq_d*S_num * eq_os
+    # den and nom are changed
+    tf = (K * eq_d / eq_n) * S_num
     # manual scale
     if inp_X_min.get() != 'auto':
         Ws = float(inp_X_min.get())
@@ -377,12 +430,23 @@ canvas.get_tk_widget().grid(row=0, column=0, columnspan=6)
 toolbar = NavigationToolbar2Tk(canvas, root, pack_toolbar=False)
 toolbar.update()
 
-nom_text = tkinter.StringVar()                                                                                 #data
-nom_text.set('8.79e-11 0.0088')
+nom_text = tkinter.StringVar()
 den_text = tkinter.StringVar()
-den_text.set('4.7e-4 0, 7.67e-14 7.67e-06 0.0032 0.0859 1')
 ku_text = tkinter.StringVar()
-ku_text.set('25')
+Kos_text = tkinter.StringVar()
+
+try:                                                                                          #data
+    with open('tf.txt', 'r') as f:
+        nom_text.set()
+        den_text.set('4.7e-4 0, 7.67e-14 7.67e-06 0.0032 0.0859 1')
+        Kos_text.set('1')
+        ku_text.set('25')
+except:
+    nom_text.set('8.79e-11 0.0088')
+    den_text.set('4.7e-4 0, 7.67e-14 7.67e-06 0.0032 0.0859 1')
+    ku_text.set('25')
+    Kos_text.set('1')
+
 
 inp_ku = tkinter.Entry(master=root, width=10, textvariable=ku_text, justify='center')
 inp_ku.grid(row=1, column=1, rowspan=2)
@@ -397,9 +461,8 @@ tkinter.Button(master=root, text="Plot", command=plot, width=10).grid(row=1, col
 tkinter.Button(master=root, text="Plot_real", command=plot_real, width=10).grid(row=1, column=4)
 tkinter.Button(master=root, text="Plot_fase", command=plot_fase, width=10).grid(row=2, column=4)
 
-tkinter.Label(master=root, text="K(os):").grid(row=3, column=1)
-Kos_text = tkinter.StringVar()
-Kos_text.set('1, 10, 100, 1000')
+tkinter.Label(master=root, text="K(os):").grid(row=3, column=1, pady=3)
+
 inp_Kos = tkinter.Entry(master=root, width=60, textvariable=Kos_text, justify='center')
 inp_Kos.grid(row=3, column=2)
 
