@@ -50,9 +50,14 @@ W_max = float('-inf')
 LEGENDS_lax = []
 LEGENDS_fase = []
 
-figsize = (12, 8.5)
+from screeninfo import get_monitors
+for m in get_monitors():
+    h = m.height
+figsize = (12, 8 - (1080 - h) / 100)
 if sys.platform == 'darwin':
-    figsize = (10, 6.5)
+    for m in get_monitors():
+        h = m.height
+    figsize = (10, 6.5 - (900 - h) / 100 )
     root.wm_attributes('-fullscreen','true')
 
 
@@ -508,7 +513,7 @@ def save_eq():
 
 
 fig, (ax, ax_f) = plt.subplots(nrows=2, ncols=1, figsize=figsize)
-fig.subplots_adjust(bottom=0.04, top=0.98)
+fig.subplots_adjust(bottom=0.04, top=0.97)
 ax.set_xscale('log')
 ax.set_xlabel('Omega [rad / s]')
 ax.set_ylabel('Magnitude [db]')
