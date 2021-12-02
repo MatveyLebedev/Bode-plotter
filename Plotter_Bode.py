@@ -1,3 +1,5 @@
+import time
+import threading
 import matplotlib.pyplot as plt
 import numpy as np
 import sympy
@@ -5,6 +7,39 @@ import tkinter
 import math
 from matplotlib.backends.backend_tkagg import ( FigureCanvasTkAgg, NavigationToolbar2Tk )
 import sys
+import math
+
+class Cursor:
+    """
+    A cross hair cursor.
+    """
+    def __init__(self, ax):
+        self.ax = ax
+        self.vertical_line = ax.axvline(color='k', lw=0.8, ls='--')
+        # text location in axes coordinates
+        self.text = ax.text(0.72, 0.9, '', transform=ax.transAxes)
+
+    def set_cross_hair_visible(self, visible):
+        need_redraw = self.vertical_line.get_visible() != visible
+        self.vertical_line.set_visible(visible)
+        self.text.set_visible(visible)
+        return need_redraw
+
+    def on_mouse_move(self, event):
+        if not event.inaxes:
+            need_redraw = self.set_cross_hair_visible(False)
+            if need_redraw:
+                self.ax.figure.canvas.draw()
+        else:
+            self.set_cross_hair_visible(True)
+            x, y = event.xdata, event.ydata
+            # update the line positions
+            self.vertical_line.set_xdata(x)
+            self.ax.figure.canvas.draw()
+
+W_sr = None
+Fase_zap = None
+Zap_po_mod = None
 
 root = tkinter.Tk()
 root.wm_title("MY_LAFCHA")
@@ -15,16 +50,21 @@ W_max = float('-inf')
 LEGENDS_lax = []
 LEGENDS_fase = []
 
-figsize = (10, 8)
+figsize = (12, 8.5)
 if sys.platform == 'darwin':
     figsize = (10, 6.5)
     root.wm_attributes('-fullscreen','true')
 
 
-def bild_lax(nom, den): # nom and den are strings
-    global Ws, Wf, S_den, S_num, naclon_0, W_min, W_max
+def bild_lax(nom, den, flag_rec=False): # nom and den are strings
+    global Ws, Wf, S_den, S_num, naclon_0, W_min, W_max, W_sr, i_sr
     S_den = 1
     S_num = 1
+
+    OS_status = switch_variable.get()
+    if OS_status == '1' and flag_rec:
+        bild_lax(nom, den, flag_rec=True)
+
     s = sympy.symbols('s')
 
     nom = nom.split(', ')
@@ -166,6 +206,7 @@ def bild_lax(nom, den): # nom and den are strings
 
     naklons.append(naklon)
 
+
     for i in range(len(W_n) + len(W_d)):
         if len(W_n) == 0:
             n_min = float('inf')
@@ -209,7 +250,6 @@ def bild_lax(nom, den): # nom and den are strings
             naklons.append(naklon)
 
 
-
     for i in range(len(X)):
         if X[i] >= Wf:
             X = X[0: i]
@@ -227,12 +267,42 @@ def bild_lax(nom, den): # nom and den are strings
         Y[-1] = 0
 
     naclon_0 = naklons[0]
+
+
+    if OS_status == '0':
+        X_log = list(map(math.log10, X))
+        for y, i in zip(Y, range(len(Y))):
+            if y <= 0:
+                x0 = X_log[i - 1]
+                x1 = X_log[i]
+                y0 = Y[i - 1]
+                y1 = Y[i]
+                f = sympy.symbols('f')
+                eq = sympy.parse_expr(f'(({x1} - f)/({x1} - {x0})) - ({abs(y1)} / ({abs(y1)} + {abs(y0)}))')
+                f = sympy.solve(eq, f)[0]
+                f = 10**f
+                W_sr = f
+                L_Wsr['text'] = f'Wsr: {"%.2f" % f}'
+                i_sr = i
+                break
+
+    if OS_status == '1':
+        X0 = X
+        Y0 = Y
+        X = [X0[0]]
+        Y = [0]
+        X.append(W_sr)
+        Y.append(0)
+        X.extend(X0[i_sr::])
+        Y.extend(Y0[i_sr::])
     return X, Y
 
 def find_lafch_not_asimpt(den, nom):
     global S_den, S_num, naclon_0, Ws, Wf
     K = float(eval(inp_ku.get()))
     s = sympy.symbols('s')
+
+    OS_status = switch_variable.get()
 
     nom = nom.split(', ')
     den = den.split(', ')
@@ -293,8 +363,13 @@ def find_lafch_not_asimpt(den, nom):
             eq_d *= eq
 
     eq_n = eq_n*S_den + K*eq_d*S_num * eq_os
+
+    if OS_status == '1':
+        eq_n = eq_n + K*eq_d
     # den and nom are changed
     tf = (K * eq_d / eq_n) * S_num
+    with open('tf_out.txt', 'w') as f:
+        f.write(f'TF: {str(tf)}')
     # manual scale
     if inp_X_min.get() != 'auto':
         Ws = float(inp_X_min.get())
@@ -324,6 +399,11 @@ def find_lafch_not_asimpt(den, nom):
             fase_dif = fase_0 - FASE
         fase_0 = FASE
         Y_FASE.append(FASE + fase_dif)
+    if OS_status == '0':
+        PQ = tf.subs(s, np.complex(0, W_sr)).evalf()
+        P, Q = PQ.as_real_imag()
+        zf = 180 + 180 * naclon_0 + math.degrees(math.atan(Q/P))
+        L_zap_fase['text'] = f'fase res: {"%.2f" % zf}'
 
     return X, Y_LAX, Y_FASE
 
@@ -342,6 +422,7 @@ def plot():
         ax.plot(X, Y, color='b')
     ax.legend(LEGENDS_lax)
     canvas.draw_idle()
+    save_eq()
 
 def plot_real():
     nom = inp_num.get()
@@ -358,6 +439,7 @@ def plot_real():
         ax.plot(X, Y, color='r')
     ax.legend(LEGENDS_lax)
     canvas.draw_idle()
+    save_eq()
 
 def plot_fase():
     nom = inp_num.get()
@@ -374,6 +456,7 @@ def plot_fase():
         ax_f.plot(X, Y_f, color='r')
     ax_f.legend(LEGENDS_fase)
     canvas.draw_idle()
+    save_eq()
 
 def plot_point_lax():
     points_X = list(map(float, inp_X.get().split(', ')))
@@ -416,8 +499,16 @@ def clear():
 def save():
     plt.savefig('MY_LAFCH', dpi=300)
 
+def save_eq():
+    with open('tf.txt', 'w') as f:
+        f.write(f'Nom:{nom_text.get()}\n')
+        f.write(f'Den:{den_text.get()}\n')
+        f.write(f'Wos:{Kos_text.get()}\n')
+        f.write(f'Ku:{ku_text.get()}\n')
+
+
 fig, (ax, ax_f) = plt.subplots(nrows=2, ncols=1, figsize=figsize)
-fig.subplots_adjust(bottom=0.04, top=0.99)
+fig.subplots_adjust(bottom=0.04, top=0.98)
 ax.set_xscale('log')
 ax.set_xlabel('Omega [rad / s]')
 ax.set_ylabel('Magnitude [db]')
@@ -429,23 +520,29 @@ canvas.draw()
 canvas.get_tk_widget().grid(row=0, column=0, columnspan=6)
 toolbar = NavigationToolbar2Tk(canvas, root, pack_toolbar=False)
 toolbar.update()
+cursor1 = Cursor(ax)
+fig.canvas.mpl_connect('motion_notify_event', cursor1.on_mouse_move)
+cursor2 = Cursor(ax_f)
+fig.canvas.mpl_connect('motion_notify_event', cursor2.on_mouse_move)
 
 nom_text = tkinter.StringVar()
 den_text = tkinter.StringVar()
 ku_text = tkinter.StringVar()
 Kos_text = tkinter.StringVar()
 
-try:                                                                                          #data
+try:
     with open('tf.txt', 'r') as f:
-        nom_text.set()
-        den_text.set('4.7e-4 0, 7.67e-14 7.67e-06 0.0032 0.0859 1')
-        Kos_text.set('1')
-        ku_text.set('25')
+        lines = f.read()
+        data = lines.split('\n')
+        nom_text.set(data[0].split(':')[1])
+        den_text.set(data[1].split(':')[1])
+        Kos_text.set(data[2].split(':')[1])
+        ku_text.set(data[3].split(':')[1])
 except:
-    nom_text.set('8.79e-11 0.0088')
-    den_text.set('4.7e-4 0, 7.67e-14 7.67e-06 0.0032 0.0859 1')
+    nom_text.set('1')
+    den_text.set('0.01 1, 1 0')
     ku_text.set('25')
-    Kos_text.set('1')
+    Kos_text.set('0')
 
 
 inp_ku = tkinter.Entry(master=root, width=10, textvariable=ku_text, justify='center')
@@ -461,7 +558,7 @@ tkinter.Button(master=root, text="Plot", command=plot, width=10).grid(row=1, col
 tkinter.Button(master=root, text="Plot_real", command=plot_real, width=10).grid(row=1, column=4)
 tkinter.Button(master=root, text="Plot_fase", command=plot_fase, width=10).grid(row=2, column=4)
 
-tkinter.Label(master=root, text="K(os):").grid(row=3, column=1, pady=3)
+tkinter.Label(master=root, text="W(os):").grid(row=3, column=1, pady=3)
 
 inp_Kos = tkinter.Entry(master=root, width=60, textvariable=Kos_text, justify='center')
 inp_Kos.grid(row=3, column=2)
@@ -498,10 +595,30 @@ inp_X_max.grid(row=6, column=5)
 
 toolbar.grid(row=7, column=0, columnspan=3)
 
-tkinter.Label(master=root, text="Legend and color \nname, r or auto").grid(row=1, column=5)
+tkinter.Label(master=root, text="Legend and color \nname, color or auto").grid(row=1, column=5)
 Legend_and_color = tkinter.StringVar()
 Legend_and_color.set('auto')
 inp_legend = tkinter.Entry(master=root, width=10, textvariable=Legend_and_color, justify='center')
 inp_legend.grid(row=2, column=5)
 
+tkinter.Label(master=root, text="Closed loop:").grid(row=3, column=3)
+switch_frame = tkinter.Frame(root)
+switch_frame.grid(row=3, column=4)
+
+switch_variable = tkinter.StringVar(value="0")
+off_button = tkinter.Radiobutton(switch_frame, text="Off", variable=switch_variable,
+                            indicatoron=False, value="0", width=6)
+low_button = tkinter.Radiobutton(switch_frame, text="on", variable=switch_variable,
+                            indicatoron=False, value="1", width=6)
+off_button.pack(side='left')
+low_button.pack(side='left')
+
+L_Wsr = tkinter.Label(master=root, text="")
+L_Wsr.grid(row=7, column=3)
+L_zap_fase = tkinter.Label(master=root, text="")
+L_zap_fase.grid(row=7, column=4)
+L_zap_mod = tkinter.Label(master=root, text="")
+L_zap_mod.grid(row=7, column=5)
+
 tkinter.mainloop()
+
