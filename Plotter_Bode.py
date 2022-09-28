@@ -9,6 +9,7 @@ from matplotlib.backends.backend_tkagg import ( FigureCanvasTkAgg, NavigationToo
 import sys
 import math
 
+
 class Cursor:
     """
     A cross hair cursor.
@@ -50,14 +51,10 @@ W_max = float('-inf')
 LEGENDS_lax = []
 LEGENDS_fase = []
 
-from screeninfo import get_monitors
-for m in get_monitors():
-    h = m.height
-figsize = (12, 8 - (1080 - h) / 100)
+
+figsize = (12, 8)
 if sys.platform == 'darwin':
-    for m in get_monitors():
-        h = m.height
-    figsize = (10, 6.5 - (900 - h) / 100 )
+    figsize = (10, 6.5)
     root.wm_attributes('-fullscreen','true')
 
 

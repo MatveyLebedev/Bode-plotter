@@ -5,5 +5,5 @@ Work without installation.
 Versions for windows, macos and linux.
 ![img.png](img_1.png)
 
-Compilation: pyinstaller --onefile --noconsole Plotter_LAFCH.py
+Compilation: pyinstaller --onefile --noconsole Plotter_Bode.py
 Link to distributive: https://drive.google.com/drive/folders/1G6nBU9xSQHCceM5l_ZXFjNTNZYbLlnEc?usp=sharing
