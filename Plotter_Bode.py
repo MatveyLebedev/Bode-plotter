@@ -1,10 +1,8 @@
-import time
-import threading
 import matplotlib.pyplot as plt
 import numpy as np
 import sympy
 import tkinter
-import math
+from screeninfo import get_monitors
 from matplotlib.backends.backend_tkagg import ( FigureCanvasTkAgg, NavigationToolbar2Tk )
 import sys
 import math
@@ -52,10 +50,10 @@ LEGENDS_lax = []
 LEGENDS_fase = []
 
 
-figsize = (12, 8)
-if sys.platform == 'darwin':
-    figsize = (10, 6.5)
-    root.wm_attributes('-fullscreen','true')
+
+for m in get_monitors():
+    h = m.height
+figsize = (12, 7 - (1080/h-1)*5)
 
 
 def bild_lax(nom, den, flag_rec=False): # nom and den are strings
